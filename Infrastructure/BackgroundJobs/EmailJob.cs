@@ -2,11 +2,7 @@
 using Application.Interfaces;
 using Infrastructure.Persistance;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Polly;
 
 namespace Infrastructure.BackgroundJobs
 {
@@ -32,9 +28,12 @@ namespace Infrastructure.BackgroundJobs
             {
                 return;
             }
+            var retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
             try
             {
-                await _sender.SendAsync(email.ToEmail,email.Subject,email.Body);
+                await retryPolicy.ExecuteAsync(async () => { 
+                    await _sender.SendAsync(email.ToEmail,email.Subject,email.Body);
+                });
                 email.Status = EmailStatus.Sent;
                 email.SentAt = DateTime.UtcNow;
             }
