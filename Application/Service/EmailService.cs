@@ -1,6 +1,8 @@
-﻿using Application.Interfaces;
+﻿using Application.DTOs;
+using Application.Interfaces;
 using Domain.Entities;
 using Hangfire;
+using Infrastructure.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,14 +14,14 @@ namespace Application.Service
     public class EmailService : IEmailService
     {
         private readonly IEmailRepository _emailRepo;
-        private readonly  IBackgroundJobService _backgroundJobService;
+        private readonly IRabbitMqPublisher _publisher;
         private readonly  IEmailTemplateService _emailTemplateService;
 
-        public EmailService(IEmailRepository emailRepo, IBackgroundJobService backgroundJobService, IEmailTemplateService emailTemplateService)
+        public EmailService(IEmailRepository emailRepo, IRabbitMqPublisher publisher, IEmailTemplateService emailTemplateService)
         {
             _emailRepo = emailRepo;
-            _backgroundJobService = backgroundJobService;
             _emailTemplateService = emailTemplateService;
+            _publisher = publisher;
         }
 
         public async Task<Guid> QueueEmailAsync(string to, string subject, string body)
@@ -42,7 +44,14 @@ namespace Application.Service
                 CreatedAt = DateTime.UtcNow
             };
             await _emailRepo.AddAsync(email);
-            _backgroundJobService.EnqueueEmailJob(email.Id);
+            var message = new EmailMessage
+            {
+                EmailId = email.Id,
+                To = email.ToEmail,
+                Subject = email.Subject,
+                Body = email.Body
+            };
+            _publisher.Publish(message);
             return email.Id;
         }
     }

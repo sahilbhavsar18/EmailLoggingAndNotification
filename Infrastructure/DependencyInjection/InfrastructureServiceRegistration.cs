@@ -2,6 +2,7 @@
 using Application.Service;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.Email;
+using Infrastructure.Messaging;
 using Infrastructure.Persistance;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Http;
@@ -28,6 +29,8 @@ namespace Infrastructure.DependencyInjection
             services.AddScoped<IEmailService,EmailService>();
             services.AddScoped<IBackgroundJobService, BackgroundJobService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+            services.AddScoped<IRabbitMqPublisher, RabbitMqPublisher>();
+            services.AddHostedService<RabbitMqConsumer>();
             return services;
         }
     }
