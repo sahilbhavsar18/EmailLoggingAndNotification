@@ -27,6 +27,7 @@ namespace Infrastructure.DependencyInjection
             services.AddScoped<EmailJob>();
             services.AddScoped<IEmailService,EmailService>();
             services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             return services;
         }
     }
