@@ -28,7 +28,15 @@ namespace Infrastructure.BackgroundJobs
             {
                 return;
             }
-            var retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            var retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(3, 
+                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                (exception, timespan, retryCount, context) =>
+                {
+                    _logger.LogWarning(
+                        "Retry {RetryCount} After {Delay}'s Due To:{Message}",
+                        retryCount,timespan.TotalSeconds,exception.Message
+                        );
+                });
             try
             {
                 await retryPolicy.ExecuteAsync(async () => { 
@@ -39,11 +47,10 @@ namespace Infrastructure.BackgroundJobs
             }
             catch (Exception Ex)
             {
-                _logger.LogError(Ex,"Email Failer For {Email}",email.ToEmail);
-                email.RetryCount++;
-                email.Status = email.RetryCount >= 3 ? EmailStatus.Failed : EmailStatus.Pending;
+                email.Status = EmailStatus.Failed;
                 email.ErrorMessage = GetFriendlyMessage(Ex);
                 email.ErrorDetails = Ex.ToString();
+                _logger.LogError(Ex,"Email Failer For {Email}",email.ToEmail);
             }
             await _context.SaveChangesAsync();
         }
