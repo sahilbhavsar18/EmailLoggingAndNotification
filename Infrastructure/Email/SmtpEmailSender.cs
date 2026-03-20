@@ -15,7 +15,7 @@ namespace Infrastructure.Email
         {
             var client = new SmtpClient("smtp.gmail.com", 587)
             {
-                Credentials = new NetworkCredential("bhavsarsahil48@gmail.com", "byrx leoe yofq miqk"),
+                Credentials = new NetworkCredential("bhavsarsahil48@gmail.com", "byrx leoe yofq miqw"),
                 EnableSsl = true
             };
             var email = new MailMessage()

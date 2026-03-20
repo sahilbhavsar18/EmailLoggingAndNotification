@@ -1,6 +1,7 @@
 ﻿using Application.Common.Enums;
 using Application.Interfaces;
 using Infrastructure.Persistance;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +15,14 @@ namespace Infrastructure.BackgroundJobs
         private readonly IEmailRepository _emailRepo;
         private readonly IEmailSender _sender;
         private readonly AppDbContext _context;
+        private readonly ILogger<EmailJob> _logger;
 
-        public EmailJob(IEmailRepository emailRepo, IEmailSender sender, AppDbContext context)
+        public EmailJob(IEmailRepository emailRepo, IEmailSender sender, AppDbContext context, ILogger<EmailJob> logger)
         {
             _emailRepo = emailRepo;
             _sender = sender;
             _context = context;
+            _logger = logger;
         }
 
         public async Task ProdessMail(Guid emailId)
@@ -37,6 +40,7 @@ namespace Infrastructure.BackgroundJobs
             }
             catch (Exception Ex)
             {
+                _logger.LogError(Ex,"Email Failer For {Email}",email.ToEmail);
                 email.RetryCount++;
                 email.Status = email.RetryCount >= 3 ? EmailStatus.Failed : EmailStatus.Pending;
                 email.ErrorMessage = GetFriendlyMessage(Ex);
